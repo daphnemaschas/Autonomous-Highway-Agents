@@ -4,7 +4,7 @@ import gymnasium as gym
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.config import make_env
+from shared_core_config import make_env
 
 def main():
     """
