@@ -1,5 +1,6 @@
 import gymnasium as gym
 import highway_env
+from gymnasium.wrappers import FlattenObservation
 
 SHARED_CORE_ENV_ID = "highway-v0"
 
@@ -47,4 +48,8 @@ def make_env(render_mode=None):
     """
     env = gym.make(SHARED_CORE_ENV_ID, render_mode=render_mode)
     env.unwrapped.configure(SHARED_CORE_CONFIG)
+
+    env.reset() 
+    env = FlattenObservation(env)
+
     return env
