@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100):
     """
@@ -17,12 +18,16 @@ def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100):
     """
     episode_rewards = []
     episode_lengths = []
+    crashes = 0
+    failure_seeds = []
     
-    for i in range(num_episodes):
-        obs, info = env.reset(seed=seed_offset + i)
+    for i in tqdm(range(num_episodes), desc="Evaluating policy"):
+        current_seed = seed_offset + i
+        obs, info = env.reset(seed=current_seed)
         done, truncated = False, False
         total_reward = 0.0
         steps = 0
+        crashed = False
         
         while not (done or truncated):
             action = policy_func(obs)
@@ -30,11 +35,19 @@ def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100):
             obs, reward, done, truncated, info = env.step(action)
             total_reward += reward
             steps += 1
+
+            if info.get('crashed', False):
+                crashed = True
             
         episode_rewards.append(total_reward)
         episode_lengths.append(steps)
+        if crashed:
+            crashes += 1
+            failure_seeds.append(current_seed)
+    
     
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
+    crash_rate = (crashes / num_episodes) * 100
     
     return episode_rewards, episode_lengths, mean_reward, std_reward
