@@ -50,4 +50,4 @@ def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100):
     std_reward = np.std(episode_rewards)
     crash_rate = (crashes / num_episodes) * 100
     
-    return episode_rewards, episode_lengths, mean_reward, std_reward
+    return episode_rewards, episode_lengths, mean_reward, std_reward, crash_rate, failure_seeds
