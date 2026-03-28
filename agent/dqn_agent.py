@@ -8,27 +8,28 @@ from agent.dqn_model import QNetwork
 from agent.replay_buffer import ReplayBuffer
 
 class DQNAgent:
-    def __init__(self, state_size, action_size, device, lr=5e-4, gamma=0.99, 
-                 buffer_capacity=10000, batch_size=64, target_update_freq=500):
+    def __init__(self, state_size, action_size, device, config):
         self.state_size = state_size
         self.action_size = action_size
         self.device = device
-        self.gamma = gamma
-        self.batch_size = batch_size
-        self.target_update_freq = target_update_freq
+        
+        self.gamma = config['gamma']
+        self.batch_size = config['batch_size']
+        self.target_update_freq = config['target_update_freq']
         self.step_count = 0
 
-        self.epsilon = 1.0
-        self.epsilon_min = 0.05
-        self.epsilon_decay = 0.995
+        self.epsilon = config['epsilon_start']
+        self.epsilon_min = config['epsilon_min']
+        self.epsilon_decay = config['epsilon_decay']
 
-        self.policy_net = QNetwork(state_size, action_size).to(device)
-        self.target_net = QNetwork(state_size, action_size).to(device)
+        hidden_size = config.get('hidden_size', 256)
+        self.policy_net = QNetwork(state_size, action_size, hidden_size).to(device)
+        self.target_net = QNetwork(state_size, action_size, hidden_size).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=lr)
-        self.memory = ReplayBuffer(buffer_capacity, device)
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=config['lr'])
+        self.memory = ReplayBuffer(config['buffer_capacity'], device)
 
     def select_action(self, state):
         if random.random() < self.epsilon:
