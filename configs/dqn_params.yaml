@@ -1,4 +1,4 @@
-experiment_name: "dqn_v1_large_buffer"
+experiment_name: "dqn_v1_big_buffer_2000_episodes"
 
 training:
   episodes: 2000

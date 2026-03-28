@@ -55,13 +55,15 @@ def train(config):
         if (e + 1) % 100 == 0:
             torch.save(agent.policy_net.state_dict(), f"models/{exp_name}_ep{e+1}.pth")
 
+    final_model_path = f"models/{exp_name}_final.pth"
+    torch.save(agent.policy_net.state_dict(), final_model_path)
+
     np.save(f"results/{exp_name}_rewards.npy", np.array(episode_rewards))
     print(f"Training complete. Rewards saved to results/{exp_name}_rewards.npy")
     env.close()
 
-def evaluate(config, target_episode):
+def evaluate(config, model_path):
     exp_name = config['experiment_name']
-    model_path = f"models/{exp_name}_ep{target_episode}.pth"
     
     print(f"Loading model from {model_path}...")
     env = make_env(render_mode="rgb_array")
@@ -105,7 +107,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the Custom DQN Agent")
     parser.add_argument("--mode", type=str, choices=["train", "eval"], required=True)
     parser.add_argument("--config", type=str, default="configs/dqn_params.yaml")
-    parser.add_argument("--eval_ep", type=int, default=2000, help="Episode checkpoint to load for eval")
+    parser.add_argument("--model_path", type=str, default=None, 
+                        help="Path to the model weights. Defaults to the final experiment checkpoint.")
     
     args = parser.parse_args()
     cfg = load_config(args.config)
@@ -113,4 +116,8 @@ if __name__ == "__main__":
     if args.mode == "train":
         train(cfg)
     elif args.mode == "eval":
-        evaluate(cfg, args.eval_ep)
+        if args.model_path is None:
+            exp_name = cfg['experiment_name']
+            args.model_path = f"models/{exp_name}_final.pth"
+            
+        evaluate(cfg, args.model_path)
