@@ -1,6 +1,7 @@
 import os
 import argparse
 import sys
+import imageio
 import torch
 import numpy as np
 
@@ -57,8 +58,10 @@ def train(episodes):
 
 
 def evaluate(model_path):
+    # Saves the evaluation rollout as a GIF
     print(f"Loading model from {model_path} and starting evaluation...")
-    env = make_env(render_mode="human")
+    
+    env = make_env(render_mode="rgb_array")
     
     state_size = 50
     action_size = env.action_space.n
@@ -74,8 +77,12 @@ def evaluate(model_path):
     total_reward = 0
     step = 0
     
+    frames = []
+    
     with torch.no_grad(): 
         while not (done or truncated):
+            frames.append(env.render())
+            
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(device)
             
             q_values = model(state_tensor)
@@ -88,6 +95,12 @@ def evaluate(model_path):
     print(f"Evaluation finished after {step} steps. Total reward: {total_reward:.2f}")
     env.close()
 
+    gif_path = "results/dqn_rollout.gif"
+    print(f"Saving GIF to {gif_path}...")
+    imageio.mimsave(gif_path, frames, fps=15)
+    print("GIF saved successfully!")
+    
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the Custom DQN Agent")
     parser.add_argument("--mode", type=str, choices=["train", "eval"], required=True, 
