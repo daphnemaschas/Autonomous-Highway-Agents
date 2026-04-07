@@ -14,7 +14,7 @@ from src.agents.dqn.dqn_agent import DQNAgent
 from src.agents.dqn.dqn_model import QNetwork
 
 
-def get_latest_trained_model(results_dir="results"):
+def get_latest_trained_model(results_dir="results/dqn"):
     pattern = os.path.join(results_dir, "*_last.pth")
     candidates = glob.glob(pattern)
     if not candidates:
@@ -40,8 +40,8 @@ def train(config):
     agent = DQNAgent(state_size, action_size, device, agent_params)
     episode_rewards = []
 
-    os.makedirs("models", exist_ok=True)
-    os.makedirs("results", exist_ok=True)
+    os.makedirs("models/dqn", exist_ok=True)
+    os.makedirs("results/dqn", exist_ok=True)
 
     for e in range(episodes):
         state, info = env.reset()
@@ -62,12 +62,12 @@ def train(config):
             print(f"Episode {e+1}/{episodes} | Epsilon: {agent.epsilon:.2f} | Avg Reward: {avg_reward:.2f}")
 
         if (e + 1) % 100 == 0:
-            torch.save(agent.policy_net.state_dict(), f"models/{exp_name}_ep{e+1}.pth")
+            torch.save(agent.policy_net.state_dict(), f"models/dqn/{exp_name}_ep{e+1}.pth")
 
-    last_model_path = f"results/{exp_name}_last.pth"
+    last_model_path = f"results/dqn/{exp_name}_last.pth"
     torch.save(agent.policy_net.state_dict(), last_model_path)
 
-    final_rewards_path = f"results/{exp_name}_rewards.npy"
+    final_rewards_path = f"results/dqn/{exp_name}_rewards.npy"
     np.save(final_rewards_path, np.array(episode_rewards, dtype=np.float32))
     print(f"Training complete. Last model saved to {last_model_path}")
     print(f"Rewards saved to {final_rewards_path}")
@@ -110,7 +110,7 @@ def evaluate(config, model_path):
     print(f"Evaluation finished after {step} steps. Total reward: {total_reward:.2f}")
     env.close()
 
-    gif_path = f"results/{exp_name}_rollout.gif"
+    gif_path = f"results/dqn/{exp_name}_rollout.gif"
     imageio.mimsave(gif_path, frames, fps=15)
     print(f"GIF saved successfully to {gif_path}")
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, choices=["train", "eval"], required=True)
     parser.add_argument("--config", type=str, default="configs/dqn_params.yaml")
     parser.add_argument("--model_path", type=str, default=None, 
-                        help="Path to model weights. Defaults to the latest trained *_last.pth in results/.")
+                        help="Path to model weights. Defaults to the latest trained *_last.pth in results/dqn/.")
     
     args = parser.parse_args()
     cfg = load_config(args.config)
@@ -128,12 +128,12 @@ if __name__ == "__main__":
         train(cfg)
     elif args.mode == "eval":
         if args.model_path is None:
-            args.model_path = get_latest_trained_model("results")
+            args.model_path = get_latest_trained_model("results/dqn")
             if args.model_path is None:
                 exp_name = cfg['experiment_name']
-                args.model_path = f"results/{exp_name}_last.pth"
+                args.model_path = f"results/dqn/{exp_name}_last.pth"
                 raise FileNotFoundError(
-                    f"No trained *_last.pth model found in results/. Expected fallback path: {args.model_path}"
+                    f"No trained *_last.pth model found in results/dqn/. Expected fallback path: {args.model_path}"
                 )
             
         evaluate(cfg, args.model_path)
