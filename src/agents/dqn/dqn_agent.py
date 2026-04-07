@@ -4,8 +4,8 @@ import torch.optim as optim
 import random
 import numpy as np
 
-from agent.dqn_model import QNetwork
-from agent.replay_buffer import ReplayBuffer
+from src.agents.dqn.dqn_model import QNetwork
+from src.agents.dqn.replay_buffer import ReplayBuffer
 
 class DQNAgent:
     def __init__(self, state_size, action_size, device, config):

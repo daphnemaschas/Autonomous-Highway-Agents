@@ -1,6 +1,7 @@
 import os
 import argparse
 import sys
+import glob
 import yaml
 import imageio
 import torch
@@ -9,8 +10,16 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from environment.shared_core_config import make_env
-from agent.dqn_agent import DQNAgent
-from agent.dqn_model import QNetwork
+from src.agents.dqn.dqn_agent import DQNAgent
+from src.agents.dqn.dqn_model import QNetwork
+
+
+def get_latest_trained_model(results_dir="results"):
+    pattern = os.path.join(results_dir, "*_last.pth")
+    candidates = glob.glob(pattern)
+    if not candidates:
+        return None
+    return max(candidates, key=os.path.getmtime)
 
 def load_config(config_path):
     with open(config_path, 'r') as file:
@@ -47,7 +56,7 @@ def train(config):
             total_reward += reward
 
         episode_rewards.append(total_reward)
-        
+
         if (e + 1) % 10 == 0:
             avg_reward = np.mean(episode_rewards[-10:])
             print(f"Episode {e+1}/{episodes} | Epsilon: {agent.epsilon:.2f} | Avg Reward: {avg_reward:.2f}")
@@ -55,11 +64,13 @@ def train(config):
         if (e + 1) % 100 == 0:
             torch.save(agent.policy_net.state_dict(), f"models/{exp_name}_ep{e+1}.pth")
 
-    final_model_path = f"models/{exp_name}_final.pth"
-    torch.save(agent.policy_net.state_dict(), final_model_path)
+    last_model_path = f"results/{exp_name}_last.pth"
+    torch.save(agent.policy_net.state_dict(), last_model_path)
 
-    np.save(f"results/{exp_name}_rewards.npy", np.array(episode_rewards))
-    print(f"Training complete. Rewards saved to results/{exp_name}_rewards.npy")
+    final_rewards_path = f"results/{exp_name}_rewards.npy"
+    np.save(final_rewards_path, np.array(episode_rewards, dtype=np.float32))
+    print(f"Training complete. Last model saved to {last_model_path}")
+    print(f"Rewards saved to {final_rewards_path}")
     env.close()
 
 def evaluate(config, model_path):
@@ -108,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, choices=["train", "eval"], required=True)
     parser.add_argument("--config", type=str, default="configs/dqn_params.yaml")
     parser.add_argument("--model_path", type=str, default=None, 
-                        help="Path to the model weights. Defaults to the final experiment checkpoint.")
+                        help="Path to model weights. Defaults to the latest trained *_last.pth in results/.")
     
     args = parser.parse_args()
     cfg = load_config(args.config)
@@ -117,7 +128,12 @@ if __name__ == "__main__":
         train(cfg)
     elif args.mode == "eval":
         if args.model_path is None:
-            exp_name = cfg['experiment_name']
-            args.model_path = f"models/{exp_name}_final.pth"
+            args.model_path = get_latest_trained_model("results")
+            if args.model_path is None:
+                exp_name = cfg['experiment_name']
+                args.model_path = f"results/{exp_name}_last.pth"
+                raise FileNotFoundError(
+                    f"No trained *_last.pth model found in results/. Expected fallback path: {args.model_path}"
+                )
             
         evaluate(cfg, args.model_path)
