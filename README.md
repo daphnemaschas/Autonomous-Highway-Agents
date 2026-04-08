@@ -37,7 +37,13 @@ L'évaluation génère un GIF de rollout dans `results/<experiment_name>_rollout
 python scripts/run_sb3_dqn.py --mode train_all
 ```
 
-Cette commande entraîne l'agent sur 3 seeds, sauvegarde les modèles dans `models/` et les poids du modèle entrainé dans `results/`.
+Cette commande entraîne l'agent sur 3 seeds, sauvegarde les modèles dans `models/` et les poids des modèles entrainés dans `results/`.
+
+Pour entraîner un agent sur une seed: 
+```bash
+python scripts/run_sb3_dqn.py --mode train --seed 1
+```
+Cette commande entraîne l'agent avec seed=1, sauvegarde le modèle dans `models/` et les poids du modèle entrainé dans `results/`.
 
 ### 2. Évaluation
 
