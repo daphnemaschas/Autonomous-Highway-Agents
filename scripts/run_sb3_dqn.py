@@ -69,7 +69,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mode == "train":
-        train(total_timesteps=args.timesteps, seed=1)
+        train(total_timesteps=args.timesteps, seed=args.seed)
 
     elif args.mode == "train_all":
         for seed in [1, 2, 3]:
