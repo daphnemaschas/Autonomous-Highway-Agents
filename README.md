@@ -20,11 +20,12 @@ python scripts/run_custom_dqn.py --mode eval --config configs/dqn_params.yaml
 ```
 
 Par défaut, l'évaluation charge le modèle final `models/<experiment_name>_final.pth`.
+Par défaut, l'évaluation charge le dernier modèle trouvé dans `results/dqn/*_last.pth`.
 
 Pour évaluer un checkpoint précis:
 
 ```bash
-python scripts/run_custom_dqn.py --mode eval --config configs/dqn_params.yaml --model_path models/<nom_du_modele>.pth
+python scripts/run_custom_dqn.py --mode eval --config configs/dqn_params.yaml --model_path results/dqn/<nom_du_modele>.pth
 ```
 
 L'évaluation génère un GIF de rollout dans `results/<experiment_name>_rollout.gif`.
@@ -53,3 +54,24 @@ python scripts/run_sb3_dqn.py --mode eval --model_path results/sb3/sb3_seed_1_la
 
 L'évaluation génère un GIF de rollout dans `results/sb3/<experiment_name>_rollout.gif`.
 
+## Benchmark (Custom DQN vs SB3)
+
+Ce script applique un protocole commun et reproductible:
+- même environnement/configuration,
+- mêmes seeds d'évaluation,
+- mêmes métriques (reward, crash rate, longueur d'épisode).
+
+### Exécution
+
+```bash
+python scripts/run_benchmark.py --config configs/dqn_params.yaml --num-episodes 50
+```
+
+### Sorties
+
+- `results/benchmark/benchmark_table.csv` (résultats par modèle)
+- `results/benchmark/benchmark_summary.csv` (agrégé par méthode)
+- `results/benchmark/benchmark_summary.md` (résumé lisible)
+- `results/benchmark/benchmark_metadata.json` (versions, seeds, hash de config)
+- `results/benchmark/benchmark_comparison.png`
+- `results/benchmark/training_curves.png` (si fichiers rewards présents)

@@ -1,0 +1,5 @@
+algorithm,model_id,model_path,n_eval_episodes,mean_reward,std_reward,mean_length,std_length,crash_rate_pct,n_crashes,failure_seeds_preview
+custom_dqn,dqn_v1_big_buffer_2000_episodes_last.pth,results/dqn/dqn_v1_big_buffer_2000_episodes_last.pth,50,17.721299998870197,7.19345242377722,22.62,9.522373653664301,40.0,20,"102,104,105,108,111,112,113,117,124,125"
+sb3_dqn,sb3_seed_1_last.zip,results/sb3/sb3_seed_1_last.zip,50,20.126932840184512,8.581400530522426,21.46,8.651496980291908,66.0,33,"101,103,104,105,106,108,110,111,112,115"
+sb3_dqn,sb3_seed_2_last.zip,results/sb3/sb3_seed_2_last.zip,50,17.07887178605279,9.04316239351216,18.1,8.962700485902673,84.0,42,"100,101,102,104,105,106,107,108,110,111"
+sb3_dqn,sb3_seed_3_last.zip,results/sb3/sb3_seed_3_last.zip,50,18.06443270449639,8.37307681181434,19.06,8.080618788186955,80.0,40,"101,103,104,105,106,108,109,110,111,112"
