@@ -56,7 +56,7 @@ def run_evaluation(model_path):
     gif_path = os.path.join("results", "sb3", f"{exp_name}_rollout.gif")
     
     imageio.mimsave(gif_path, frames, fps=15)
-    print(f"GIF saved successfully to {gif_path} ! 🎥")
+    print(f"GIF saved successfully to {gif_path} !")
 
 
 if __name__ == "__main__": 
