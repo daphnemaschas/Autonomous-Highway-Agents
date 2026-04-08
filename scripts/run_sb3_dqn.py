@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import numpy as np
+import imageio
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -35,10 +36,34 @@ def run_evaluation(model_path):
 
     env.close()
 
+    print("\nRecording a game for the GIF...")
+    env_render = make_env(render_mode="rgb_array")
+    obs, info = env_render.reset(seed=42)
+    done, truncated = False, False
+    frames = []
+
+    while not (done or truncated):
+        frames.append(env_render.render())
+        action = sb3_policy(obs)
+        obs, reward, done, truncated, info = env_render.step(action)
+        
+    for _ in range(10):
+        frames.append(env_render.render())
+        
+    env_render.close()
+    
+    exp_name = os.path.basename(model_path).replace(".zip", "")
+    gif_path = os.path.join("results", "sb3", f"{exp_name}_rollout.gif")
+    
+    imageio.mimsave(gif_path, frames, fps=15)
+    print(f"GIF saved successfully to {gif_path} ! 🎥")
+
+
 if __name__ == "__main__": 
     parser = argparse.ArgumentParser(description="Run the SB3 DQN Agent")
     parser.add_argument("--mode", type=str, choices=["train", "eval", "train_all"], default="train_all")
     parser.add_argument("--timesteps", type=int, default=50000)
+    parser.add_argument("--seed", type=int, default=1, help="Seed for train mode")
     parser.add_argument("--model_path", type=str, default="", help="Path to .zip")
     
     args = parser.parse_args()
