@@ -11,11 +11,11 @@ from environment.shared_core_config import make_env
 from stable_baselines3 import DQN
 from src.utils.evaluate import evaluate_policy
 
-def run_evaluation(model_path):
+def run_evaluation(model_path, use_safety_wrapper=False, penalty_weight=0.5):
     print(f"Loading model from {model_path}...")
     model = DQN.load(model_path)
     
-    env = make_env()
+    env = make_env(use_safety_wrapper=use_safety_wrapper, penalty_weight=penalty_weight)
     
     def sb3_policy(obs):
         action, _ = model.predict(obs, deterministic=True)
@@ -53,7 +53,12 @@ def run_evaluation(model_path):
     env_render.close()
     
     exp_name = os.path.basename(model_path).replace(".zip", "")
-    gif_path = os.path.join("results", "sb3", f"{exp_name}_rollout.gif")
+    base_folder = "sb3_safety" if use_safety_wrapper else "sb3"
+    if use_safety_wrapper:
+        exp_name += f"_{penalty_weight}"
+        
+    gif_path = os.path.join("results", base_folder, f"{exp_name}_rollout.gif")
+    
     
     imageio.mimsave(gif_path, frames, fps=15)
     print(f"GIF saved successfully to {gif_path} !")
@@ -65,18 +70,23 @@ if __name__ == "__main__":
     parser.add_argument("--timesteps", type=int, default=50000)
     parser.add_argument("--seed", type=int, default=1, help="Seed for train mode")
     parser.add_argument("--model_path", type=str, default="", help="Path to .zip")
+    parser.add_argument("--safety", action="store_true", help="Enable the safety wrapper to avoid crashes")
+    parser.add_argument("--penalty_weight", type=float, default=0.5, help="Weight of the close-distance penalty")
     
     args = parser.parse_args()
 
     if args.mode == "train":
-        train(total_timesteps=args.timesteps, seed=args.seed)
+        train(total_timesteps=args.timesteps, seed=args.seed, use_safety_wrapper=args.safety, 
+            penalty_weight=args.penalty_weight)
 
     elif args.mode == "train_all":
         for seed in [1, 2, 3]:
-            train(total_timesteps=args.timesteps, seed=seed)
+            train(total_timesteps=args.timesteps, seed=seed, use_safety_wrapper=args.safety, 
+            penalty_weight=args.penalty_weight)
 
     elif args.mode == "eval":
         if args.model_path == "":
             print("Error: Specify --model_path (e.g., results/sb3/sb3_seed_1_last.zip)")
             sys.exit(1)
-        run_evaluation(args.model_path)
+        run_evaluation(args.model_path, use_safety_wrapper=args.safety, 
+            penalty_weight=args.penalty_weight)

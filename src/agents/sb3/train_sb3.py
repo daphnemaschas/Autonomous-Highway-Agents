@@ -9,7 +9,7 @@ from src.agents.sb3.agent_sb3 import create_sb3_agent
 
 from src.utils.callbacks import EpisodeRewardLoggerCallback
 
-def train(total_timesteps=50000, seed=1):
+def train(total_timesteps=50000, seed=1, use_safety_wrapper=False, penalty_weight=0.5):
     """
     Trains a single SB3 DQN model.
     
@@ -19,12 +19,14 @@ def train(total_timesteps=50000, seed=1):
     """
 
     run_id=f"sb3_seed_{seed}"
+    base_folder = "sb3_safety" if use_safety_wrapper else "sb3"
     
-    env = make_env()
+    env = make_env(use_safety_wrapper=use_safety_wrapper, penalty_weight=penalty_weight)
+
+    model_dir = f"models/{base_folder}/{run_id}/"
+    log_dir = f"data/logs/{base_folder}/{run_id}/"
+    results_dir = f"results/{base_folder}/"
     
-    model_dir = f"models/sb3/{run_id}/"
-    log_dir = f"data/logs/sb3/{run_id}/"
-    results_dir = "results/sb3/"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
