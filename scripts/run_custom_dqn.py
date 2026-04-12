@@ -36,7 +36,11 @@ def train(config):
     action_size = env.action_space.n
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    agent_params = {**config['agent'], 'hidden_size': config['model']['hidden_size']}
+    agent_params = {
+        **config['agent'],
+        'hidden_size': config['model']['hidden_size'],
+        'num_hidden_layers': config['model'].get('num_hidden_layers', 2),
+    }
     agent = DQNAgent(state_size, action_size, device, agent_params)
     episode_rewards = []
 
@@ -83,7 +87,12 @@ def evaluate(config, model_path):
     action_size = env.action_space.n
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    model = QNetwork(state_size, action_size, config['model']['hidden_size']).to(device)
+    model = QNetwork(
+        state_size,
+        action_size,
+        config['model']['hidden_size'],
+        config['model'].get('num_hidden_layers', 2),
+    ).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval() 
     
