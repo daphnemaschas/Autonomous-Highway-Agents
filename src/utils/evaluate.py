@@ -41,6 +41,9 @@ def evaluate_policy_on_seeds(env, policy_func, eval_seeds, speed=False):
 
         episode_rewards.append(total_reward)
         episode_lengths.append(steps)
+        if episode_speeds:
+            all_speeds.append(np.mean(episode_speeds))
+           
         if crashed:
             crashes += 1
             failure_seeds.append(current_seed)
