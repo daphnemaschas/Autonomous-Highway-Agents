@@ -8,22 +8,23 @@ import torch
 import numpy as np
 import webbrowser
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from environment.shared_core_config import make_env
-from src.agents.dqn.dqn_agent import DQNAgent
-from src.agents.dqn.dqn_model import QNetwork
+from src.agents.d3qn.d3qn_agent import D3QNAgent
+from src.agents.d3qn.d3qn_model import DuelingQNetwork
 
 
-def get_latest_trained_model(results_dir="results/dqn"):
+def get_latest_trained_model(results_dir="results/d3qn"):
     pattern = os.path.join(results_dir, "*_last.pth")
     candidates = glob.glob(pattern)
     if not candidates:
         return None
     return max(candidates, key=os.path.getmtime)
 
+
 def load_config(config_path):
-    with open(config_path, 'r') as file:
+    with open(config_path, "r") as file:
         return yaml.safe_load(file)
 
 
@@ -37,33 +38,34 @@ def str2bool(value):
         return False
     raise argparse.ArgumentTypeError("Boolean value expected: true/false")
 
+
 def train(config):
-    exp_name = config['experiment_name']
-    episodes = config['training']['episodes']
-    
+    exp_name = config["experiment_name"]
+    episodes = config["training"]["episodes"]
+
     print(f"Starting training for {episodes} episodes. Experiment: {exp_name}")
-    env = make_env(render_mode=None) 
-    
-    state_size = 50 
+    env = make_env(render_mode=None)
+
+    state_size = 50
     action_size = env.action_space.n
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     agent_params = {
-        **config['agent'],
-        'hidden_size': config['model']['hidden_size'],
-        'num_hidden_layers': config['model'].get('num_hidden_layers', 2),
+        **config["agent"],
+        "hidden_size": config["model"]["hidden_size"],
+        "num_hidden_layers": config["model"].get("num_hidden_layers", 2),
     }
-    agent = DQNAgent(state_size, action_size, device, agent_params)
+    agent = D3QNAgent(state_size, action_size, device, agent_params)
     episode_rewards = []
 
-    os.makedirs("models/dqn", exist_ok=True)
-    os.makedirs("results/dqn", exist_ok=True)
+    os.makedirs("models/d3qn", exist_ok=True)
+    os.makedirs("results/d3qn", exist_ok=True)
 
     for e in range(episodes):
         state, info = env.reset()
         total_reward = 0
         done = truncated = False
-        
+
         while not (done or truncated):
             action = agent.select_action(state)
             next_state, reward, done, truncated, info = env.step(action)
@@ -75,39 +77,43 @@ def train(config):
 
         if (e + 1) % 10 == 0:
             avg_reward = np.mean(episode_rewards[-10:])
-            print(f"Episode {e+1}/{episodes} | Epsilon: {agent.epsilon:.2f} | Avg Reward: {avg_reward:.2f}")
+            print(
+                f"Episode {e+1}/{episodes} | Epsilon: {agent.epsilon:.2f} | Avg Reward: {avg_reward:.2f}"
+            )
 
         if (e + 1) % 100 == 0:
-            torch.save(agent.policy_net.state_dict(), f"models/dqn/{exp_name}_ep{e+1}.pth")
+            torch.save(agent.policy_net.state_dict(), f"models/d3qn/{exp_name}_ep{e+1}.pth")
 
-    last_model_path = f"results/dqn/{exp_name}_last.pth"
+    last_model_path = f"results/d3qn/{exp_name}_last.pth"
     torch.save(agent.policy_net.state_dict(), last_model_path)
 
-    final_rewards_path = f"results/dqn/{exp_name}_rewards.npy"
+    final_rewards_path = f"results/d3qn/{exp_name}_rewards.npy"
     np.save(final_rewards_path, np.array(episode_rewards, dtype=np.float32))
+
     print(f"Training complete. Last model saved to {last_model_path}")
     print(f"Rewards saved to {final_rewards_path}")
     env.close()
 
+
 def evaluate(config, model_path, save_and_show_gif=True):
-    exp_name = config['experiment_name']
-    
+    exp_name = config["experiment_name"]
+
     print(f"Loading model from {model_path}...")
     env = make_env(render_mode="rgb_array")
-    
+
     state_size = 50
     action_size = env.action_space.n
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    model = QNetwork(
+
+    model = DuelingQNetwork(
         state_size,
         action_size,
-        config['model']['hidden_size'],
-        config['model'].get('num_hidden_layers', 2),
+        config["model"]["hidden_size"],
+        config["model"].get("num_hidden_layers", 2),
     ).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval() 
-    
+    model.eval()
+
     num_eval_runs = 50
     rewards = []
     best_reward = -float("inf")
@@ -163,7 +169,7 @@ def evaluate(config, model_path, save_and_show_gif=True):
         for _ in range(15):
             best_frames.append(final_frame)
 
-        gif_path = f"results/dqn/{exp_name}_best_rollout.gif"
+        gif_path = f"results/d3qn/{exp_name}_best_rollout.gif"
         imageio.mimsave(gif_path, best_frames, fps=15)
         print(f"Best-run GIF saved successfully to {gif_path}")
 
@@ -175,19 +181,24 @@ def evaluate(config, model_path, save_and_show_gif=True):
 
     env.close()
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the Custom DQN Agent")
+    parser = argparse.ArgumentParser(description="Run the Custom Dueling Double DQN Agent")
     parser.add_argument("--mode", type=str, choices=["train", "eval"], required=True)
-    parser.add_argument("--config", type=str, default="configs/dqn_params.yaml")
-    parser.add_argument("--model_path", type=str, default=None, 
-                        help="Path to model weights. Defaults to the latest trained *_last.pth in results/dqn/.")
+    parser.add_argument("--config", type=str, default="configs/d3qn_params.yaml")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default=None,
+        help="Path to model weights. Defaults to the latest trained *_last.pth in results/d3qn/.",
+    )
     parser.add_argument(
         "--save_and_show_gif",
         type=str2bool,
         default=True,
         help="Whether to save and open the best-run GIF during evaluation (true/false).",
     )
-    
+
     args = parser.parse_args()
     cfg = load_config(args.config)
 
@@ -195,12 +206,12 @@ if __name__ == "__main__":
         train(cfg)
     elif args.mode == "eval":
         if args.model_path is None:
-            args.model_path = get_latest_trained_model("results/dqn")
+            args.model_path = get_latest_trained_model("results/d3qn")
             if args.model_path is None:
-                exp_name = cfg['experiment_name']
-                args.model_path = f"results/dqn/{exp_name}_last.pth"
+                exp_name = cfg["experiment_name"]
+                args.model_path = f"results/d3qn/{exp_name}_last.pth"
                 raise FileNotFoundError(
-                    f"No trained *_last.pth model found in results/dqn/. Expected fallback path: {args.model_path}"
+                    f"No trained *_last.pth model found in results/d3qn/. Expected fallback path: {args.model_path}"
                 )
-            
+
         evaluate(cfg, args.model_path, args.save_and_show_gif)
