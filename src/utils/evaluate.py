@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def evaluate_policy_on_seeds(env, policy_func, eval_seeds):
+def evaluate_policy_on_seeds(env, policy_func, eval_seeds, speed=False):
     """
     Evaluates a policy on an explicit list of seeds.
 
@@ -18,6 +18,7 @@ def evaluate_policy_on_seeds(env, policy_func, eval_seeds):
     episode_lengths = []
     crashes = 0
     failure_seeds = []
+    all_speeds = []
 
     for current_seed in tqdm(eval_seeds, desc="Evaluating policy"):
         obs, info = env.reset(seed=current_seed)
@@ -25,12 +26,16 @@ def evaluate_policy_on_seeds(env, policy_func, eval_seeds):
         total_reward = 0.0
         steps = 0
         crashed = False
+        episode_speeds = []
 
         while not (done or truncated):
             action = policy_func(obs)
             obs, reward, done, truncated, info = env.step(action)
             total_reward += reward
             steps += 1
+            if 'speed' in info:  # highway-env donne la vitesse par défaut ici
+                episode_speeds.append(info['speed'])
+                
             if info.get("crashed", False):
                 crashed = True
 
@@ -43,10 +48,14 @@ def evaluate_policy_on_seeds(env, policy_func, eval_seeds):
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
     crash_rate = (crashes / len(eval_seeds)) * 100
+    mean_speed = np.mean(all_speeds) if all_speeds else 0.0
+    if speed:
+        return episode_rewards, episode_lengths, mean_reward, std_reward, crash_rate, failure_seeds, mean_speed
+
     return episode_rewards, episode_lengths, mean_reward, std_reward, crash_rate, failure_seeds
 
 
-def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100):
+def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100, speed=False):
     """
     Evaluates a given policy over a specified number of episodes.
     Requires exactly 50 runs by the assignment "evaluate thoroughly (50 runs mean rewards + std)".
@@ -62,4 +71,4 @@ def evaluate_policy(env, policy_func, num_episodes=50, seed_offset=100):
         tuple: (list of rewards, list of episode lengths, mean reward, standard deviation)
     """
     eval_seeds = [seed_offset + i for i in range(num_episodes)]
-    return evaluate_policy_on_seeds(env=env, policy_func=policy_func, eval_seeds=eval_seeds)
+    return evaluate_policy_on_seeds(env=env, policy_func=policy_func, eval_seeds=eval_seeds, speed=speed)

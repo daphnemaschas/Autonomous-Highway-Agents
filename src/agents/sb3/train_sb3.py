@@ -19,7 +19,7 @@ def train(total_timesteps=50000, seed=1, use_safety_wrapper=False, penalty_weigh
     """
 
     run_id=f"sb3_seed_{seed}"
-    base_folder = "sb3_safety" if use_safety_wrapper else "sb3"
+    base_folder = f"sb3_safety/penalty_{penalty_weight}" if use_safety_wrapper else "sb3"
     
     env = make_env(use_safety_wrapper=use_safety_wrapper, penalty_weight=penalty_weight)
 

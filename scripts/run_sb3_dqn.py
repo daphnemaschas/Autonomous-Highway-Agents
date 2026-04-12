@@ -36,32 +36,38 @@ def run_evaluation(model_path, use_safety_wrapper=False, penalty_weight=0.5):
 
     env.close()
 
-    print("\nRecording a game for the GIF...")
+    print("\nRecording a long game for the GIF...")
     env_render = make_env(render_mode="rgb_array")
     obs, info = env_render.reset(seed=42)
     done, truncated = False, False
+    max_steps = 300
     frames = []
 
-    while not (done or truncated):
-        frames.append(env_render.render())
-        action = sb3_policy(obs)
+    for _ in range(max_steps):
+        action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env_render.step(action)
         
-    for _ in range(10):
-        frames.append(env_render.render())
+        current_frame = env_render.render()
+        frames.append(current_frame)
         
-    env_render.close()
+        if done or truncated:
+            for _ in range(10):
+                frames.append(current_frame)
+            
+            obs, info = env_render.reset()
     
     exp_name = os.path.basename(model_path).replace(".zip", "")
+
     base_folder = "sb3_safety" if use_safety_wrapper else "sb3"
     if use_safety_wrapper:
-        exp_name += f"_{penalty_weight}"
+        base_folder += f"penalty_{penalty_weight}"
         
-    gif_path = os.path.join("results", base_folder, f"{exp_name}_rollout.gif")
+    gif_path = os.path.join("results", base_folder, f"{exp_name}_long_rollout.gif")
     
+
     
-    imageio.mimsave(gif_path, frames, fps=15)
-    print(f"GIF saved successfully to {gif_path} !")
+    imageio.mimsave(gif_path, frames, fps=10)
+    print(f"Long GIF saved successfully to {gif_path} !")
 
 
 if __name__ == "__main__": 
