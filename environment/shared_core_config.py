@@ -1,6 +1,7 @@
 import gymnasium as gym
 import highway_env
 from gymnasium.wrappers import FlattenObservation
+from src.utils.safety_wrappers import SafetyRewardWrapper
 
 SHARED_CORE_ENV_ID = "highway-v0"
 
@@ -35,19 +36,23 @@ SHARED_CORE_CONFIG = {
     "offroad_terminal": True,
 }
 
-def make_env(render_mode=None):
+def make_env(render_mode=None, use_safety_wrapper=False, penalty_weight=0.5):
     """
     Creates and configures the highway-v0 environment based on the shared core configuration.
     
     Args:
-        render_mode (str, optional): The render mode for the environment (e.g., 'rgb_array', 'human').
-            Defaults to None.
+        render_mode (str, optional): 'rgb_array', 'human', etc.
+        use_safety_wrapper (bool): Si True, ajoute la pénalité de distance.
+        penalty_weight (float): Puissance de la pénalité de rapprochement.
             
     Returns:
         gym.Env: The configured highway-v0 environment ready for interaction.
     """
     env = gym.make(SHARED_CORE_ENV_ID, render_mode=render_mode)
     env.unwrapped.configure(SHARED_CORE_CONFIG)
+    
+    if use_safety_wrapper:
+        env = SafetyRewardWrapper(env, distance_threshold=15.0, penalty_weight=penalty_weight)
 
     env.reset() 
     env = FlattenObservation(env)
