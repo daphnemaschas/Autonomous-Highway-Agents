@@ -60,7 +60,8 @@ def run_evaluation(model_path, use_safety_wrapper=False, penalty_weight=0.5):
 
     base_folder = "sb3_safety" if use_safety_wrapper else "sb3"
     if use_safety_wrapper:
-        base_folder += f"penalty_{penalty_weight}"
+        base_folder += f"/penalty_{penalty_weight}/"
+        os.makedirs(base_folder, exist_ok=True)
         
     gif_path = os.path.join("results", base_folder, f"{exp_name}_long_rollout.gif")
     
