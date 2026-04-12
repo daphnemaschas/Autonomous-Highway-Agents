@@ -23,8 +23,9 @@ class DQNAgent:
         self.epsilon_decay = config['epsilon_decay']
 
         hidden_size = config.get('hidden_size', 256)
-        self.policy_net = QNetwork(state_size, action_size, hidden_size).to(device)
-        self.target_net = QNetwork(state_size, action_size, hidden_size).to(device)
+        num_hidden_layers = config.get('num_hidden_layers', 2)
+        self.policy_net = QNetwork(state_size, action_size, hidden_size, num_hidden_layers).to(device)
+        self.target_net = QNetwork(state_size, action_size, hidden_size, num_hidden_layers).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
