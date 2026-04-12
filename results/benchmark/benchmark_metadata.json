@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-04-08T23:15:09.062734+00:00",
+  "timestamp_utc": "2026-04-12T17:34:49.188892+00:00",
   "python_version": "3.12.12",
   "platform": "macOS-26.3-arm64-arm-64bit",
   "package_versions": {
@@ -68,7 +68,9 @@
   ],
   "config_file": "configs/dqn_params.yaml",
   "dqn_models": [
-    "results/dqn/dqn_v1_big_buffer_2000_episodes_last.pth"
+    "results/dqn/dqn_v1_big_buffer_2000_episodes_last.pth",
+    "results/dqn/dqn_v2_2_layers_last.pth",
+    "results/dqn/dqn_v2_slow_lr_last.pth"
   ],
   "sb3_models": [
     "results/sb3/sb3_seed_1_last.zip",

@@ -53,6 +53,33 @@ def _package_versions():
     return versions
 
 
+def _load_dqn_checkpoint(model, model_path, device):
+    checkpoint = torch.load(model_path, map_location=device)
+    if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+        checkpoint = checkpoint["state_dict"]
+
+    try:
+        model.load_state_dict(checkpoint)
+        return
+    except RuntimeError:
+        pass
+
+    # Backward compatibility with older checkpoints using fc1/fc2/fc3 names.
+    if all(k in checkpoint for k in ["fc1.weight", "fc1.bias", "fc2.weight", "fc2.bias", "fc3.weight", "fc3.bias"]):
+        remapped = {
+            "network.0.weight": checkpoint["fc1.weight"],
+            "network.0.bias": checkpoint["fc1.bias"],
+            "network.2.weight": checkpoint["fc2.weight"],
+            "network.2.bias": checkpoint["fc2.bias"],
+            "network.4.weight": checkpoint["fc3.weight"],
+            "network.4.bias": checkpoint["fc3.bias"],
+        }
+        model.load_state_dict(remapped, strict=True)
+        return
+
+    raise RuntimeError(f"Unsupported DQN checkpoint format for: {model_path}")
+
+
 def _evaluate_dqn_model(model_path, hidden_size, eval_seeds):
     env = make_env()
     obs_dim = int(np.prod(env.observation_space.shape))
@@ -60,7 +87,7 @@ def _evaluate_dqn_model(model_path, hidden_size, eval_seeds):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = QNetwork(obs_dim, action_dim, hidden_size=hidden_size).to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    _load_dqn_checkpoint(model=model, model_path=model_path, device=device)
     model.eval()
 
     def policy(obs):
@@ -159,25 +186,74 @@ def _write_markdown_summary(path, detailed_df, summary_df, metadata_dict):
             lines.append("| " + " | ".join(vals) + " |")
         return "\n".join(lines)
 
+    summary_fr = summary_df.rename(
+        columns={
+            "algorithm": "algorithme",
+            "mean_reward": "reward_moyenne",
+            "std_reward": "ecart_type_reward",
+            "mean_crash_rate_pct": "crash_rate_moyen_pct",
+            "n_models": "nb_modeles",
+        }
+    )
+    detailed_fr = detailed_df.rename(
+        columns={
+            "algorithm": "algorithme",
+            "model_id": "modele",
+            "model_path": "chemin",
+            "n_eval_episodes": "n_eval",
+            "mean_reward": "reward_moyenne",
+            "std_reward": "reward_std",
+            "mean_length": "longueur_moyenne",
+            "std_length": "longueur_std",
+            "crash_rate_pct": "crash_rate_pct",
+            "n_crashes": "nb_crash",
+            "failure_seeds_preview": "seeds_echec_apercu",
+        }
+    )
+
     lines = []
-    lines.append("# Benchmark Summary")
+    lines.append("# Resume Du Benchmark")
     lines.append("")
-    lines.append("## Protocol")
-    lines.append(f"- Environment: `{metadata_dict['environment_id']}`")
-    lines.append(f"- Shared eval seeds: `{metadata_dict['eval_seeds'][0]}..{metadata_dict['eval_seeds'][-1]}`")
-    lines.append(f"- Number of eval episodes per model: `{metadata_dict['num_eval_episodes']}`")
-    lines.append(f"- Config hash (fairness/reproducibility): `{metadata_dict['shared_config_sha256']}`")
+    lines.append("## Protocole")
+    lines.append(f"- Environnement: `{metadata_dict['environment_id']}`")
+    lines.append(f"- Seeds d'evaluation partagees: `{metadata_dict['eval_seeds'][0]}..{metadata_dict['eval_seeds'][-1]}`")
+    lines.append(f"- Nombre d'episodes d'evaluation par modele: `{metadata_dict['num_eval_episodes']}`")
+    lines.append(f"- Hash de configuration (reproductibilite): `{metadata_dict['shared_config_sha256']}`")
     lines.append("")
-    lines.append("## Aggregate Results")
-    lines.append(dataframe_to_markdown(summary_df))
+    lines.append("### Interpretation Du Protocole")
+    lines.append("- Meme configuration pour tous les modeles: comparaison equitable.")
+    lines.append("- Memes seeds d'evaluation: variance aleatoire controlee.")
+    lines.append("- Hash fourni: preuve de configuration stable.")
     lines.append("")
-    lines.append("## Per-Model Results")
-    lines.append(dataframe_to_markdown(detailed_df))
+    lines.append("## Visualisations")
     lines.append("")
-    lines.append("## Reproducibility Notes")
-    lines.append("- Same environment config was used for every evaluation.")
-    lines.append("- Same deterministic evaluation seed list was reused for all models.")
-    lines.append("- Full run metadata is available in `benchmark_metadata.json`.")
+    lines.append("### Comparaison Finale (Reward)")
+    lines.append("![Comparaison benchmark](benchmark_comparison.png)")
+    lines.append("- Lecture: compare la reward moyenne agregée entre methodes.")
+    lines.append("")
+    lines.append("### Courbes D'entrainement")
+    lines.append("![Courbes entrainement](training_curves.png)")
+    lines.append("- Lecture: dynamique de convergence et stabilite des runs.")
+    lines.append("")
+    lines.append("## Resultats Agreges")
+    lines.append(dataframe_to_markdown(summary_fr))
+    lines.append("")
+    lines.append("### Interpretation Des Resultats Agreges")
+    lines.append("- `reward_moyenne`: performance brute moyenne.")
+    lines.append("- `crash_rate_moyen_pct`: indicateur securite (plus bas = mieux).")
+    lines.append("- `ecart_type_reward`: variabilite entre modeles d'une meme methode.")
+    lines.append("")
+    lines.append("## Resultats Par Modele")
+    lines.append(dataframe_to_markdown(detailed_fr))
+    lines.append("")
+    lines.append("### Interpretation Par Modele")
+    lines.append("- Permet d'identifier le meilleur checkpoint et les cas instables.")
+    lines.append("- `seeds_echec_apercu` liste des seeds a rejouer pour analyse d'echec.")
+    lines.append("")
+    lines.append("## Notes De Reproductibilite")
+    lines.append("- Meme configuration environnementale pour toutes les evaluations.")
+    lines.append("- Meme liste de seeds deterministes pour tous les modeles.")
+    lines.append("- Metadonnees completes dans `benchmark_metadata.json`.")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 

@@ -60,6 +60,8 @@ Ce script applique un protocole commun et reproductible:
 - même environnement/configuration,
 - mêmes seeds d'évaluation,
 - mêmes métriques (reward, crash rate, longueur d'épisode).
+- évaluation chiffrée sur `50` runs par modèle (consigne du projet).
+- compatibilité checkpoints DQN anciens et nouveaux formats.
 
 ### Exécution
 

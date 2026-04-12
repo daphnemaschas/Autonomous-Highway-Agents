@@ -1,65 +1,52 @@
-# Résumé Du Benchmark
+# Resume Du Benchmark
 
 ## Protocole
 - Environnement: `highway-v0`
-- Seeds d'évaluation partagées: `100..149`
-- Nombre d'épisodes d'évaluation par modèle: `50`
-- Hash de configuration (reproductibilité): `b1f97473cf49b8a53d9ce3c2bd3d96b6bf286bfa155888401ebe10d790dba8bb`
+- Seeds d'evaluation partagees: `100..149`
+- Nombre d'episodes d'evaluation par modele: `50`
+- Hash de configuration (reproductibilite): `b1f97473cf49b8a53d9ce3c2bd3d96b6bf286bfa155888401ebe10d790dba8bb`
 
-### Interprétation Du Protocole
-- Les deux approches sont évaluées dans le même cadre, donc la comparaison est équitable.
-- Les seeds identiques réduisent le biais lié au hasard.
-- Le hash permet de prouver que la configuration n'a pas changé entre les évaluations.
+### Interpretation Du Protocole
+- Meme configuration pour tous les modeles: comparaison equitable.
+- Memes seeds d'evaluation: variance aleatoire controlee.
+- Hash fourni: preuve de configuration stable.
 
 ## Visualisations
 
 ### Comparaison Finale (Reward)
 ![Comparaison benchmark](benchmark_comparison.png)
+- Lecture: compare la reward moyenne agregée entre methodes.
 
-Interprétation:
-- La reward moyenne agrégée de `sb3_dqn` est légèrement supérieure à `custom_dqn`.
-- L'écart reste modéré, donc la supériorité en reward n'est pas écrasante.
+### Courbes D'entrainement
+![Courbes entrainement](training_curves.png)
+- Lecture: dynamique de convergence et stabilite des runs.
 
-### Courbes D'entraînement
-![Courbes entraînement](training_curves.png)
-
-Interprétation:
-- Les courbes montrent la dynamique d'apprentissage de chaque méthode.
-- On observe la stabilité/variabilité des runs SB3 entre seeds.
-- La courbe custom DQN sert de référence de convergence face aux runs SB3.
-
-## Résultats Agrégés
+## Resultats Agreges
 | algorithme | reward_moyenne | ecart_type_reward | crash_rate_moyen_pct | nb_modeles |
 | --- | --- | --- | --- | --- |
-| custom_dqn | 17.721299998870197 | 0.0 | 40.0 | 1 |
+| custom_dqn | 17.64266162870695 | 2.3333557120630277 | 41.333333333333336 | 3 |
 | sb3_dqn | 18.4234124435779 | 1.5554159852695086 | 76.66666666666667 | 3 |
 
-### Interprétation Des Résultats Agrégés
-- `reward_moyenne`: SB3 est un peu meilleur en performance brute.
-- `crash_rate_moyen_pct`: le custom DQN est nettement meilleur en sécurité (moins d'accidents).
-- `ecart_type_reward` côté SB3: variabilité non négligeable entre seeds.
-- Attention: `custom_dqn` n'a qu'un seul modèle évalué ici (`nb_modeles=1`), donc il faut rester prudent sur la robustesse statistique.
+### Interpretation Des Resultats Agreges
+- `reward_moyenne`: performance brute moyenne.
+- `crash_rate_moyen_pct`: indicateur securite (plus bas = mieux).
+- `ecart_type_reward`: variabilite entre modeles d'une meme methode.
 
-## Résultats Par Modèle
+## Resultats Par Modele
 | algorithme | modele | chemin | n_eval | reward_moyenne | reward_std | longueur_moyenne | longueur_std | crash_rate_pct | nb_crash | seeds_echec_apercu |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | custom_dqn | dqn_v1_big_buffer_2000_episodes_last.pth | results/dqn/dqn_v1_big_buffer_2000_episodes_last.pth | 50 | 17.721299998870197 | 7.19345242377722 | 22.62 | 9.522373653664301 | 40.0 | 20 | 102,104,105,108,111,112,113,117,124,125 |
+| custom_dqn | dqn_v2_2_layers_last.pth | results/dqn/dqn_v2_2_layers_last.pth | 50 | 19.935704097415474 | 3.725536792573459 | 27.8 | 5.596427431853289 | 14.000000000000002 | 7 | 114,123,125,131,143,148,149 |
+| custom_dqn | dqn_v2_slow_lr_last.pth | results/dqn/dqn_v2_slow_lr_last.pth | 50 | 15.270980789835182 | 6.346037087725945 | 19.58 | 8.590902164499372 | 70.0 | 35 | 100,101,102,107,108,109,111,112,113,114 |
 | sb3_dqn | sb3_seed_1_last.zip | results/sb3/sb3_seed_1_last.zip | 50 | 20.126932840184512 | 8.581400530522426 | 21.46 | 8.651496980291908 | 66.0 | 33 | 101,103,104,105,106,108,110,111,112,115 |
 | sb3_dqn | sb3_seed_2_last.zip | results/sb3/sb3_seed_2_last.zip | 50 | 17.07887178605279 | 9.04316239351216 | 18.1 | 8.962700485902673 | 84.0 | 42 | 100,101,102,104,105,106,107,108,110,111 |
 | sb3_dqn | sb3_seed_3_last.zip | results/sb3/sb3_seed_3_last.zip | 50 | 18.06443270449639 | 8.37307681181434 | 19.06 | 8.080618788186955 | 80.0 | 40 | 101,103,104,105,106,108,109,110,111,112 |
 
-### Interprétation Par Modèle
-- `SB3 seed 1` est le meilleur en reward, mais avec un crash rate élevé (66%).
-- `SB3 seed 2` et `SB3 seed 3` confirment un profil plus risqué (80%+ de crash).
-- Le `custom_dqn` a une reward un peu plus basse, mais un crash rate bien plus faible (40%), ce qui peut être préférable si la sécurité est prioritaire.
-- Les `seeds_echec_apercu` permettent d'identifier des cas de défaillance à rejouer pour l'analyse qualitative.
+### Interpretation Par Modele
+- Permet d'identifier le meilleur checkpoint et les cas instables.
+- `seeds_echec_apercu` liste des seeds a rejouer pour analyse d'echec.
 
-## Conclusion Opérationnelle
-- Si l'objectif principal est la reward: SB3 est légèrement devant.
-- Si l'objectif inclut fortement la sécurité: le custom DQN est plus convaincant sur ce benchmark.
-- Pour renforcer la conclusion finale, il faudrait ajouter au moins 2 autres runs custom DQN (3 seeds au total), afin d'avoir une symétrie complète avec SB3.
-
-## Notes De Reproductibilité
-- Même configuration environnementale pour toutes les évaluations.
-- Même liste de seeds déterministes pour tous les modèles.
-- Métadonnées complètes dans `benchmark_metadata.json`.
+## Notes De Reproductibilite
+- Meme configuration environnementale pour toutes les evaluations.
+- Meme liste de seeds deterministes pour tous les modeles.
+- Metadonnees completes dans `benchmark_metadata.json`.
