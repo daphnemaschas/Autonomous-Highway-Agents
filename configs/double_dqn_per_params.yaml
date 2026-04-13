@@ -1,4 +1,4 @@
-experiment_name: "double_dqn_v1"
+experiment_name: "double_dqn_per_v1"
 
 training:
   episodes: 5000
