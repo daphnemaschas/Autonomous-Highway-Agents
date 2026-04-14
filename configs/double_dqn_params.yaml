@@ -1,8 +1,6 @@
-experiment_name: "double_dqn_v1"
-
+experiment_name: "double_dqn_v3"
 training:
-  episodes: 5000
-
+  episodes: 4000
 agent:
   lr: 0.0005
   gamma: 0.99
@@ -11,7 +9,6 @@ agent:
   target_update_freq: 500
   epsilon_start: 1.0
   epsilon_min: 0.05
-  epsilon_decay: 0.99995
-
+  epsilon_decay: 0.9999
 model:
   hidden_size: 256
