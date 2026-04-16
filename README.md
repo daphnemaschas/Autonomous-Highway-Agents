@@ -77,3 +77,34 @@ python scripts/run_benchmark.py --config configs/dqn_params.yaml --num-episodes 
 - `results/benchmark/benchmark_metadata.json` (versions, seeds, hash de config)
 - `results/benchmark/benchmark_comparison.png`
 - `results/benchmark/training_curves.png` (si fichiers rewards présents)
+
+
+
+## Le modèle custom D3QN
+
+Les paramètres du modèles sont dans le fichier d3qn_params.yaml
+
+### 1. Entraînement
+
+```bash
+python scripts/run_custom_d3qn.py --mode train --config configs/d3qn_params.yaml
+```
+
+Cette commande entraîne l'agent avec les paramètres du fichier YAML, sauvegarde les poids dans `models/` et les poids du modèle final entrainé dans `results/`.
+
+### 2. Évaluation
+
+```bash
+python scripts/run_custom_d3qn.py --mode eval --config configs/d3qn_params.yaml
+```
+
+Par défaut, l'évaluation charge le modèle final `models/<experiment_name>_final.pth`.
+Par défaut, l'évaluation charge le dernier modèle trouvé dans `results/d3qn/*_last.pth`.
+
+Pour évaluer un checkpoint précis:
+
+```bash
+python scripts/run_custom_d3qn.py --mode eval --config configs/d3qn_params.yaml --model_path results/d3qn/<nom_du_modele>.pth
+```
+
+L'évaluation génère un GIF de rollout dans `results/<experiment_name>_rollout.gif`.
