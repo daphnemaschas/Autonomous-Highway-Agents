@@ -1,0 +1,18 @@
+experiment_name: "d3qn_best"
+
+training:
+  episodes: 5000
+
+agent:
+  lr: 0.0001
+  gamma: 0.99
+  buffer_capacity: 50000
+  batch_size: 128
+  target_update_freq: 500
+  epsilon_start: 1.0
+  epsilon_min: 0.05
+  epsilon_decay: 0.99998
+
+model:
+  hidden_size: 256
+  num_hidden_layers: 2
